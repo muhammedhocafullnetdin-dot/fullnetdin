@@ -1,2 +1,273 @@
 # fullnetdin
 oyunlar
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Suruç Borsa İstanbul OO - DKAB Maden Avcısı</title>
+    <style>
+        body { margin: 0; background: #2c3e50; font-family: 'Segoe UI', Arial; overflow: hidden; color: white; user-select: none; touch-action: manipulation; }
+        #game-area { position: relative; width: 100vw; height: 100vh; background: linear-gradient(#87CEEB 0%, #87CEEB 25%, #4e342e 25%, #2d1b10 100%); display: none; }
+        
+        /* Başlangıç Ekranı */
+        #start-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 2000; text-align: center;
+        }
+        #school-info { color: #f1c40f; font-size: 24px; margin-bottom: 5px; font-weight: bold; letter-spacing: 1px; }
+        #game-title { color: #ffffff; font-size: 40px; margin-bottom: 25px; text-shadow: 3px 3px #000; border-bottom: 3px solid #f1c40f; padding-bottom: 10px; }
+        
+        #player-name { padding: 15px; font-size: 20px; border-radius: 10px; border: 3px solid #f1c40f; width: 320px; text-align: center; margin-bottom: 20px; outline: none; }
+        #start-btn { padding: 15px 45px; font-size: 24px; background: #f1c40f; color: #333; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; }
+
+        /* YouTube Amblemli İmza */
+        #brand-footer {
+            position: fixed; bottom: 20px; right: 20px; z-index: 3500;
+            display: flex; align-items: center; background: rgba(0,0,0,0.6);
+            padding: 8px 15px; border-radius: 30px; border: 1px solid #ff0000;
+        }
+        #yt-icon {
+            width: 30px; height: 20px; background: #ff0000; border-radius: 5px;
+            position: relative; margin-right: 10px;
+        }
+        #yt-icon::after {
+            content: ''; position: absolute; top: 5px; left: 11px;
+            border-left: 10px solid white; border-top: 5px solid transparent; border-bottom: 5px solid transparent;
+        }
+        #brand-text { font-weight: bold; font-size: 18px; color: white; letter-spacing: 1px; }
+
+        /* Karakter ve Soru Paneli */
+        #miner { position: absolute; top: 18%; left: 50%; transform: translateX(-50%); font-size: 65px; z-index: 80; }
+        #ui-panel { position: absolute; top: 10px; width: 100%; display: flex; justify-content: center; z-index: 100; }
+        #question-box { background: #fff; color: #333; padding: 10px 30px; border-radius: 15px; text-align: center; width: 70%; border: 5px solid #f1c40f; font-size: 22px; font-weight: bold; box-shadow: 0 6px 15px rgba(0,0,0,0.4); min-height: 50px; }
+
+        /* İstatistikler */
+        #stats { position: absolute; top: 20px; left: 20px; z-index: 150; }
+        .stat { background: #27ae60; padding: 8px 15px; border-radius: 10px; border: 2px solid #fff; margin-bottom: 5px; font-size: 16px; font-weight: bold; min-width: 140px; }
+        .lives { background: #e74c3c; }
+
+        /* Skor Tablosu */
+        #leaderboard-modal { 
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 380px; background: #34495e; border: 4px solid #f1c40f; border-radius: 20px;
+            z-index: 3000; padding: 25px; display: none; box-shadow: 0 0 50px rgba(0,0,0,0.9);
+        }
+        #score-list { max-height: 300px; overflow-y: auto; margin-bottom: 20px; }
+        .score-row { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #555; font-size: 18px; }
+        #restart-btn { width: 100%; padding: 15px; background: #27ae60; color: white; border: none; border-radius: 10px; font-size: 20px; font-weight: bold; cursor: pointer; }
+        #open-scores-btn { position: absolute; top: 20px; right: 220px; padding: 10px; background: #34495e; border: 2px solid #f1c40f; border-radius: 10px; cursor: pointer; z-index: 150; font-weight: bold; color: white; }
+
+        /* Sarı Sivri Kanca */
+        #hook-line { position: absolute; top: 32%; left: 50%; width: 3px; height: 0; background: #f1c40f; transform-origin: top center; z-index: 70; }
+        #hook-head { 
+            position: absolute; bottom: -35px; left: -12px; width: 0; height: 0; 
+            border-left: 14px solid transparent; border-right: 14px solid transparent; 
+            border-top: 35px solid #f1c40f; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5));
+        }
+        #hook-head::after { content: ''; position: absolute; top: -42px; left: -14px; width: 28px; height: 10px; border-radius: 5px; background: #f1c40f; }
+
+        /* Bulut Madenler */
+        .gold { 
+            position: absolute; width: 150px; height: 90px; display: flex; align-items: center; justify-content: center; 
+            text-align: center; font-weight: bold; font-size: 13px; color: #4b3621; padding: 15px; box-sizing: border-box; 
+            background: #f1c40f; border-radius: 50px 50px 40px 40px;
+            box-shadow: 0 8px 0 #d4ac0d, inset -8px -8px 0 rgba(0,0,0,0.05), 20px 0 0 -5px #f1c40f, -20px 0 0 -5px #f1c40f;
+            z-index: 60; 
+        }
+    </style>
+</head>
+<body onkeydown="handleKeys(event)">
+
+<div id="brand-footer">
+    <div id="yt-icon"></div>
+    <div id="brand-text">FullNetDin</div>
+</div>
+
+<div id="start-screen">
+    <div id="school-info">SURUÇ BORSA İSTANBUL ORTAOKULU</div>
+    <div id="game-title">DKAB 2. ÜNİTE TEKRARI</div>
+    <input type="text" id="player-name" placeholder="Öğrenci İsmi Yazınız..." autofocus>
+    <button id="start-btn" onclick="startGame()">OYUNU BAŞLAT</button>
+</div>
+
+<div id="leaderboard-modal">
+    <span style="position:absolute; top:10px; right:15px; cursor:pointer; color:#e74c3c; font-weight:bold; font-size:25px;" onclick="toggleScores(false)">✖</span>
+    <h2 style="text-align:center; color:#f1c40f; border-bottom:2px solid #f1c40f; padding-bottom:10px;">🏆 LİDERLİK TABLOSU</h2>
+    <div id="score-list"></div>
+    <button id="restart-btn" onclick="resetToHome()">🔄 YENİ OYUNCU / TEKRAR OYNA</button>
+</div>
+
+<button id="open-scores-btn" onclick="toggleScores(true)">🏆 SKORLAR</button>
+
+<div id="game-area" onclick="triggerHook()">
+    <div id="stats">
+        <div class="stat">👤 <span id="display-name">---</span></div>
+        <div class="stat">💰 PUAN: <span id="score">0</span></div>
+        <div class="stat lives">❤️ CAN: <span id="lives">3</span></div>
+    </div>
+    <div id="ui-panel"><div id="question-box">Hazırlanıyor...</div></div>
+    <div id="miner">🤠</div> 
+    <div id="hook-line"><div id="hook-head"></div></div>
+</div>
+
+<script>
+    const questionsBase = [
+        { q: "ÖLÇÜ PLAN DENGE PROGRAMLAMA NEDİR?", a: "KADER" },
+        { q: "GERÇEKLEŞTİRME YARATMA HÜKMETME:", a: "KAZA" },
+        { q: "SUYUN KAYNAMASI DEPREM OLMASI:", a: "FİZİKSEL YASA" },
+        { q: "FOTOSENTEZ BİTKİLERİN YAPRAKLARINI DÖKMESİ:", a: "BİYOLOJİK YASA" },
+        { q: "ESKİ KAVİMLERİN KISSALARI:", a: "TOPLUMSAL YASALAR" },
+        { q: "ALLAH'A GÜVENMEK SIĞINMAK:", a: "TEVEKKÜL" },
+        { q: "ALLAH'IN HER ŞEYİ BİLMESİ:", a: "İLİM" },
+        { q: "ALLAH'IN HER ŞEYE GÜCÜ YETMESİ:", a: "KUDRET" },
+        { q: "İNSANIN SINIRLI İRADESİ:", a: "CÜZİ İRADE" },
+        { q: "ALLAH'IN SINIRSIZ İRADESİ:", a: "KÜLLİ İRADE" },
+        { q: "HZ. MUSA'NIN MUCİZESİ:", a: "DENİZİN İKİYE AYRILMASI" },
+        { q: "HZ. MUSA'NIN UNVANI:", a: "KELİMULLAH" },
+        { q: "EL-HAYY (DİRİ OLAN):", a: "CANLI" }
+    ];
+
+    let questions = [];
+    let current = 0, score = 0, lives = 3, playerName = "";
+    let angle = 0, angleDir = 2.2, length = 0, state = "swing", grabbed = null, gameActive = false;
+    let highScores = JSON.parse(localStorage.getItem('madenSkorSuruçFinal')) || [];
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playSound(freq, type, duration) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + duration);
+    }
+
+    function toggleScores(show) {
+        document.getElementById('leaderboard-modal').style.display = show ? 'block' : 'none';
+        if(show) renderScores();
+    }
+
+    function renderScores() {
+        const list = document.getElementById('score-list');
+        list.innerHTML = highScores.slice(0, 10).map((s, i) => `
+            <div class="score-row">
+                <span>${i+1}. ${s.name}</span>
+                <span>${s.score} Puan</span>
+            </div>
+        `).join('');
+    }
+
+    function startGame() {
+        const inputName = document.getElementById('player-name').value.trim();
+        playerName = inputName || "Öğrenci";
+        document.getElementById('display-name').innerText = playerName.toUpperCase();
+        document.getElementById('start-screen').style.display = 'none';
+        document.getElementById('game-area').style.display = 'block';
+        questions = [...questionsBase].sort(() => Math.random() - 0.5);
+        current = 0; score = 0; lives = 3; gameActive = true;
+        updateUI(); spawn(); loop();
+    }
+
+    function resetToHome() {
+        gameActive = false; toggleScores(false);
+        document.getElementById('game-area').style.display = 'none';
+        document.getElementById('start-screen').style.display = 'flex';
+        document.getElementById('player-name').value = "";
+    }
+
+    function loop() {
+        if (!gameActive) return;
+        if (state === "swing") {
+            angle += angleDir;
+            if (Math.abs(angle) > 65) angleDir *= -1;
+            document.getElementById('hook-line').style.transform = `rotate(${angle}deg)`;
+        } else if (state === "shoot") {
+            length += 15;
+            document.getElementById('hook-line').style.height = length + "px";
+            checkHit();
+            if (length > window.innerHeight * 0.85) state = "back";
+        } else if (state === "back") {
+            length -= grabbed ? 6 : 24;
+            document.getElementById('hook-line').style.height = length + "px";
+            if (grabbed) {
+                const r = (angle + 90) * (Math.PI / 180);
+                grabbed.style.left = (window.innerWidth/2 + (length + 45) * Math.cos(r)) - 75 + "px";
+                grabbed.style.top = (window.innerHeight*0.32 + (length + 45) * Math.sin(r)) - 45 + "px";
+            }
+            if (length <= 0) {
+                length = 0; document.getElementById('hook-line').style.height = "0px";
+                if (grabbed) finalize();
+                state = "swing";
+            }
+        }
+        requestAnimationFrame(loop);
+    }
+
+    function triggerHook() {
+        if(gameActive && state === "swing") {
+            state = "shoot";
+            playSound(200, 'square', 0.1);
+        }
+    }
+
+    function handleKeys(e) {
+        if(e.code === 'Space' || e.code === 'ArrowDown') triggerHook();
+    }
+
+    function checkHit() {
+        const hHead = document.getElementById('hook-head').getBoundingClientRect();
+        const hX = hHead.left + 14, hY = hHead.top + 15;
+        document.querySelectorAll('.gold').forEach(g => {
+            const r = g.getBoundingClientRect();
+            if (hX > r.left && hX < r.right && hY > r.top && hY < r.bottom && !grabbed) {
+                grabbed = g; state = "back";
+            }
+        });
+    }
+
+    function finalize() {
+        if (grabbed.getAttribute('data-val') === questions[current].a) {
+            score += 10; current++;
+            playSound(880, 'sine', 0.2);
+            if (current >= questions.length) endGame("EFSANESİN!"); else spawn();
+        } else {
+            score = Math.max(0, score - 10); lives--;
+            playSound(150, 'sawtooth', 0.4);
+            if (lives <= 0) endGame("DENEMEYE DEVAM ET!"); else spawn();
+        }
+        updateUI(); grabbed.remove(); grabbed = null;
+    }
+
+    function updateUI() {
+        document.getElementById('score').innerText = score;
+        document.getElementById('lives').innerText = lives;
+    }
+
+    function endGame(m) {
+        gameActive = false;
+        document.getElementById('question-box').innerText = m + " TOPLAM PUAN: " + score;
+        highScores.push({name: playerName, score: score});
+        highScores.sort((a,b) => b.score - a.score);
+        localStorage.setItem('madenSkorSuruçFinal', JSON.stringify(highScores));
+        setTimeout(() => { toggleScores(true); }, 1500);
+    }
+
+    function spawn() {
+        document.getElementById('question-box').innerText = (current+1) + ". " + questions[current].q;
+        document.querySelectorAll('.gold').forEach(g => g.remove());
+        let pool = [{t: questions[current].a}];
+        let others = questionsBase.filter(i => i.a !== questions[current].a).map(i => i.a).sort(() => .5-Math.random()).slice(0,3);
+        others.forEach(o => pool.push({t: o}));
+        pool.sort(() => .5-Math.random()).forEach((obj, i) => {
+            const div = document.createElement('div');
+            div.className = 'gold'; div.innerText = obj.t; div.setAttribute('data-val', obj.t);
+            div.style.left = (12 + (i * 22)) + "vw"; div.style.top = (68 + (Math.random() * 12)) + "vh";
+            document.getElementById('game-area').appendChild(div);
+        });
+    }
+</script>
+</body>
+</html>
